@@ -4,11 +4,8 @@
 
 # --- Imports --- #
 import numpy as np
-
 import mindspore
 from mindspore import nn, ops
-import numpy as np
-
 
 
 class UNetConvBlock(nn.Cell):

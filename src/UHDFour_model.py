@@ -227,7 +227,7 @@ class UHDFour(object):
                  
         # load VGG19 function
         VGG = vgg19()
-        vgg_path = "/home/user/data/work/UHDFour_code-mindspore/pre_trained_VGG19_modle/vgg19.ckpt"
+        vgg_path = "./pre_trained_VGG19_modle/vgg19.ckpt"
         param_dict = load_checkpoint(vgg_path)
         load_param_into_net(VGG, param_dict)
         VGG.set_train(False)

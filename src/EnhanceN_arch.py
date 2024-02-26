@@ -328,12 +328,12 @@ class InteractNet(nn.Cell):
         self.highnet = HighNet(nc)
 
     def construct(self, x):
-
+        # print(f'x has nan:{x.isnan().any()}')
         x_f = self.extract(x) # c=8
         # 'For 'interpolate', 'scale_factor' option cannot currently be set with the mode = bilinear and dim = 4D.'
         # replace with 'size' parameter
         x_f_down = ops.interpolate(x_f,mode='bilinear',size=(int(x_f.shape[2]*0.125), int(x_f.shape[3]*0.125)))
         y_down, y_down_amp, y_down_phase = self.lownet(x_f_down)
         y = self.highnet(x,y_down, y_down_amp,y_down_phase)
-
+        
         return y, y_down

@@ -43,7 +43,7 @@ if __name__ == '__main__':
  
   
 # --- Load training data and validation/test data --- # params.train_size
-    train_loader = traindata(params.train_size, params.train_dir, batch_size=params.batch_size, shuffle=True) 
+    train_loader = traindata(params.train_size, params.train_dir, batch_size=params.batch_size, shuffle=False) 
     valid_loader = valdata_train(params.valid_dir, batch_size=1, shuffle=False) 
     UHDFour = UHDFour(params, trainable=True)
     UHDFour.train(train_loader, valid_loader)

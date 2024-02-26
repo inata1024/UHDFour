@@ -92,7 +92,8 @@ def make_dataset(size, path, batch_size=8, shuffle=True):
     """
     train_dataset = ds.GeneratorDataset(
         TrainGenerator(size, path),
-        ["data", "target"]
+        ["data", "target"],
+        shuffle = shuffle
     )
 
     trans = Compose([vision.ToTensor()])
@@ -102,8 +103,6 @@ def make_dataset(size, path, batch_size=8, shuffle=True):
     train_dataset = train_dataset.map(operations=trans, input_columns="target")
 
     # buffer_size默认为10
-    if shuffle:
-      train_dataset = train_dataset.shuffle(buffer_size=10)
     train_dataset = train_dataset.batch(batch_size)
 
     return train_dataset

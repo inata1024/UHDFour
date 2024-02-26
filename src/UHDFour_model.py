@@ -15,6 +15,9 @@ from mindspore.ops import interpolate
 from mindspore.nn import WithLossCell, TrainOneStepCell
 from networks import vgg19
 from mindspore.train.serialization import load_checkpoint, load_param_into_net
+from mindspore.ops import composite as C
+from mindspore.ops import functional as F
+import mindspore.ops.operations as P
 
 # VGG test
 
@@ -66,6 +69,83 @@ class MyWithLossCell(nn.Cell):
    @property
    def backbone_network(self):
        return self._backbone
+
+
+class ClipGradients(nn.Cell):
+    """
+    Clip gradients.
+
+    Args:
+        grads (list): List of gradient tuples.
+        clip_type (Tensor): The way to clip, 'value' or 'norm'.
+        clip_value (Tensor): Specifies how much to clip.
+
+    Returns:
+        List, a list of clipped_grad tuples.
+    """
+
+    def __init__(self):
+        super(ClipGradients, self).__init__()
+        self.clip_by_norm = nn.ClipByNorm()
+        self.cast = P.Cast()
+        self.dtype = P.DType()
+
+    def construct(self,
+                  grads,
+                  clip_type,
+                  clip_value):
+        """Defines the gradients clip."""
+        if clip_type not in (0, 1):
+            return grads
+        new_grads = ()
+        for grad in grads:
+            dt = self.dtype(grad)
+            if clip_type == 0:
+                t = C.clip_by_value(grad, self.cast(F.tuple_to_array((-clip_value,)), dt),
+                                    self.cast(F.tuple_to_array((clip_value,)), dt))
+            else:
+                t = self.clip_by_norm(grad, self.cast(
+                    F.tuple_to_array((clip_value,)), dt))
+            t = self.cast(t, dt)
+            new_grads = new_grads + (t,)
+        return new_grads
+
+
+class ClipTrainOneStepCell(TrainOneStepCell):
+    """
+    Encapsulation class of GRU network training.
+    Append an optimizer to the training network after that the construct
+    function can be called to create the backward graph.
+    Args:
+        network (Cell): The training network. Note that loss function should have been added.
+        optimizer (Optimizer): Optimizer for updating the weights.
+        sens (Number): The adjust parameter. Default: 1.0.
+        enable_clip_grad (boolean): If True, clip gradients in ClipTrainOneStepCell. Default: True.
+    """
+
+    def __init__(self, network, optimizer, clip_type = 0, enable_clip_grad=True, grad_clip_norm=0.1, sens=1.0):
+        super(ClipTrainOneStepCell, self).__init__(network, optimizer)
+        self.cast = P.Cast()
+        self.hyper_map = C.HyperMap()
+        self.clip_gradients = ClipGradients()
+        self.enable_clip_grad = enable_clip_grad
+        self.grad_clip_norm = grad_clip_norm
+        self.clip_type =  clip_type
+        self.sens = sens
+
+    def construct(self, x, y):
+        """Defines the computation performed."""
+
+        weights = self.weights
+        loss = self.network(x, y)
+        grads = self.grad(self.network, weights=weights)(x, y, self.sens)
+        if self.enable_clip_grad:
+            grads = self.clip_gradients(
+                grads, self.clip_type, self.grad_clip_norm)
+        grads = self.grad_reducer(grads)
+        succ = self.optimizer(grads)
+        return F.depend(loss, succ)
+
    
 
 
@@ -100,13 +180,17 @@ class UHDFour(object):
 
             self.scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(self.optim, T_0=2, T_mult=2)
 
+            # self.optim = nn.Adam(self.model.trainable_params(),
+            #                   learning_rate =self.p.learning_rate, 
+            #                   beta1=self.p.adam[0],
+            #                   beta2=self.p.adam[1],
+            #                   eps=self.p.adam[2]) 
+
+
         # CUDA support
         self.L1 = nn.L1Loss()
         self.L2 = nn.MSELoss()
-        #if self.p.cuda:
-        # context.set_context(mode=context.GRAPH_MODE,device_target="GPU")
         context.set_context(device_target="GPU")
-
 
 
     def _print_params(self):
@@ -180,7 +264,6 @@ class UHDFour(object):
             plot_per_epoch(self.ckpt_dir, 'Valid PSNR', stats['valid_psnr'], 'PSNR (dB)')
 
 
-    #@torch.no_grad()
     def eval(self, valid_loader):
         """Evaluates denoiser on validation set."""
 
@@ -233,22 +316,11 @@ class UHDFour(object):
         VGG.set_train(False)
 
         loss_fn = FinalLoss(self.p.dataset_name, VGG)
+        new_with_loss = MyWithLossCell(self.model, loss_fn)
+        train_network = ClipTrainOneStepCell(
+            new_with_loss, self.optim, clip_type = 0, enable_clip_grad=True, grad_clip_norm=0.1
+        )
 
-        # Define forward function
-        def forward_fn(data, target):
-            final_result,final_result_down = self.model(data)
-            loss = loss_fn(final_result,final_result_down, target)
-            return loss, final_result, final_result_down
-
-        # Get gradient function
-        grad_fn = value_and_grad(forward_fn, None, self.optim.parameters, has_aux=True)
-
-        # Define function of one-step training
-        def train_step(data, target):
-            (loss, _, _), grads = grad_fn(data, target)
-            self.optim(grads)
-            return loss
-            
         train_start = datetime.now()
         for epoch in range(self.p.nb_epochs):
             print('EPOCH {:d} / {:d}'.format(epoch + 1, self.p.nb_epochs))
@@ -264,7 +336,7 @@ class UHDFour(object):
                 batch_start = datetime.now()
                 progress_bar(batch_idx, num_batches, self.p.report_interval, loss_meter.val)
 
-                loss_final = train_step(source, target)
+                loss_final = train_network(source, target)
                 loss_meter.update(loss_final.item())   
                        
                 # Report/update statistics
@@ -283,4 +355,5 @@ class UHDFour(object):
  
 
 
- 
+
+

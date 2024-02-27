@@ -250,7 +250,7 @@ class UHDFour(object):
         show_on_epoch_end(epoch_time, valid_time, valid_loss, valid_psnr)
 
         # Decrease learning rate if plateau
-        self.scheduler.step(valid_loss)
+        self.scheduler.step()
 
         # Save checkpoint
         stats['train_loss'].append(train_loss)

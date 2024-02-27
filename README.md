@@ -17,7 +17,7 @@ The official PyTorch implementation, pretrained models and examples are availabl
 python ./src/train.py
 ```
 
-Use `python ./lowlight_train.py --help` for more details.
+Use `python ./train.py --help` for more details.
 
 For the perceptual loss used in the paper, you can download the pre-trained VGG19 model from  [Baidu Disk (Key: 1234)](https://pan.baidu.com/s/1gQbONGdvGcf5iDrM5HxbDw).
 

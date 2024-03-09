@@ -1,4 +1,4 @@
-# $\rm{[MindSpore-phase2]}$ $UHDFour$
+# $\rm{[MindSpore-phase3]}$ $UHDFour$
 
 本项目包含了以下论文的mindspore实现：
 

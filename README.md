@@ -1,30 +1,26 @@
-## Embedding Fourier for Ultra-High-Definition Low-Light Image Enhancement (ICLR 2023 Oral)
+# $\rm{[MindSpore-phase2]}$ $UHDFour$
 
-This is the MindSpore version of Embedding Fourier for Ultra-High-Definition Low-Light Image Enhancement, ICLR 2023
+本项目包含了以下论文的mindspore实现：
 
-The official PyTorch implementation, pretrained models and examples are available at https://github.com/Li-Chongyi/UHDFour_code/tree/main
-
-## Requirements
-
-1. python 3.8.18
-2. minspore 2.2.11 https://www.mindspore.cn/install/ 
-3. cuda 11.1
-
-
-## Train
-
-```bash
-python ./src/train.py
-```
-
-Use `python ./train.py --help` for more details.
-
-For the perceptual loss used in the paper, you can download the pre-trained VGG19 model from  [Baidu Disk (Key: 1234)](https://pan.baidu.com/s/1gQbONGdvGcf5iDrM5HxbDw).
+> **Embedding Fourier for Ultra-High-Definition Low-Light Image Enhancement**
+>
+> Chongyi Li, Chun-Le Guo, Man Zhou, Zhexin Liang, Shangchen Zhou, Ruicheng Feng, Chen Change Loy
+> 
+> The International Conference on Learning Representations (**ICLR**), 2023
+> 
+[[Paper](https://li-chongyi.github.io/UHDFour/)]
 
 
-## Test
 
-```bash
-python ./src/test_PSNR.py
-```
+文章官方版本仓库链接: https://github.com/Li-Chongyi/UHDFour_code
+
+
+
+目前已经完成关键代码部分的mindspore转化
+
+
+
+## 正在进行中的工作
+
+-  完整代码的mindspore实现
 

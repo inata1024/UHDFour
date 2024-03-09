@@ -13,14 +13,3 @@
 
 
 文章官方版本仓库链接: https://github.com/Li-Chongyi/UHDFour_code
-
-
-
-目前已经完成关键代码部分的mindspore转化
-
-
-
-## 正在进行中的工作
-
--  完整代码的mindspore实现
-
